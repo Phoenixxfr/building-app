@@ -88,4 +88,44 @@ export function addLevel(project: Project, level: Level): Project {
     ...project,
     levels: [...project.levels, level],
   };
+}/** A 2D point in feet, used for wall endpoints. */
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * A wall, defined by its centerline (start -> end), height, and thickness.
+ *
+ * References its Level by ID (levelId) rather than nesting the Level
+ * object, to avoid duplicated/out-of-sync data.
+ *
+ * Intentionally does NOT reference doors/windows/materials yet — those
+ * concepts don't exist in the model until later milestones.
+ */
+export interface Wall {
+  id: string;
+  levelId: string;
+  start: Point;
+  end: Point;
+  heightFt: number;
+  thicknessFt: number;
+}
+
+/** Creates a new Wall on the given level, from start to end, with the given height/thickness. */
+export function createWall(
+  levelId: string,
+  start: Point,
+  end: Point,
+  heightFt: number,
+  thicknessFt: number
+): Wall {
+  return {
+    id: createId(),
+    levelId,
+    start,
+    end,
+    heightFt,
+    thicknessFt,
+  };
 }
