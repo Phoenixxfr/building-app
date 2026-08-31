@@ -30,17 +30,32 @@ export interface Plot {
 }
 
 /**
+ * A floor/storey of a building (e.g. "Ground Floor", "First Floor").
+ *
+ * Intentionally minimal for now — no reference to walls or other
+ * elements yet, since those don't exist as a concept in the model
+ * until a later milestone.
+ */
+export interface Level {
+  id: string;
+  name: string;
+  /** Height of this level above the plot's ground reference, in feet. */
+  elevationFt: number;
+}
+
+/**
  * The top-level container for a single building design.
- * Everything else in the app (levels, elements, views) will
- * eventually hang off of a Project.
+ * Everything else in the app (elements, views) will
+ * eventually hang off of a Project via its levels.
  */
 export interface Project {
   id: string;
   name: string;
   plot: Plot;
+  levels: Level[];
 }
 
-/** Creates a new Project with a given name and plot dimensions. */
+/** Creates a new Project with a given name and plot dimensions. Starts with no levels. */
 export function createProject(
   name: string,
   widthFt: number,
@@ -54,5 +69,23 @@ export function createProject(
       widthFt,
       depthFt,
     },
+    levels: [],
+  };
+}
+
+/** Creates a new Level with a given name and elevation. */
+export function createLevel(name: string, elevationFt: number): Level {
+  return {
+    id: createId(),
+    name,
+    elevationFt,
+  };
+}
+
+/** Returns a new Project with the given level appended (does not mutate the original). */
+export function addLevel(project: Project, level: Level): Project {
+  return {
+    ...project,
+    levels: [...project.levels, level],
   };
 }
