@@ -1,0 +1,87 @@
+import { describe, it, expect } from "vitest";
+import {
+  createProject,
+  createLevel,
+  addLevel,
+  createWall,
+  addWall,
+} from "./types";
+
+describe("createProject", () => {
+  it("creates a project with the given name and plot dimensions", () => {
+    const project = createProject("My House", 60, 90);
+
+    expect(project.name).toBe("My House");
+    expect(project.plot.widthFt).toBe(60);
+    expect(project.plot.depthFt).toBe(90);
+  });
+
+  it("starts with no levels or walls", () => {
+    const project = createProject("My House", 60, 90);
+
+    expect(project.levels).toEqual([]);
+    expect(project.walls).toEqual([]);
+  });
+
+  it("gives each project and its plot a unique id", () => {
+    const a = createProject("A", 10, 10);
+    const b = createProject("B", 10, 10);
+
+    expect(a.id).not.toBe(b.id);
+    expect(a.plot.id).not.toBe(b.plot.id);
+  });
+});
+
+describe("addLevel", () => {
+  it("returns a new project with the level appended", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+
+    const updated = addLevel(project, level);
+
+    expect(updated.levels).toEqual([level]);
+  });
+
+  it("does not mutate the original project", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+
+    addLevel(project, level);
+
+    expect(project.levels).toEqual([]);
+  });
+});
+
+describe("addWall", () => {
+  it("returns a new project with the wall appended", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(
+      level.id,
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      10,
+      0.5
+    );
+
+    const updated = addWall(project, wall);
+
+    expect(updated.walls).toEqual([wall]);
+  });
+
+  it("does not mutate the original project", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(
+      level.id,
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      10,
+      0.5
+    );
+
+    addWall(project, wall);
+
+    expect(project.walls).toEqual([]);
+  });
+});
