@@ -178,8 +178,24 @@ export function drawDoor(
   ctx.fillStyle = "#dbeafe"; // light blue panel fill
   ctx.strokeStyle = "#2563eb"; // blue outline, matches earlier door color
   ctx.lineWidth = 1;
-  ctx.fillRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
+   ctx.fillRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
   ctx.strokeRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
+
+  // Swing arc: quarter circle from the hinge (one jamb) showing the
+  // door's open position, on whichever side it swings toward.
+  const hingeX = -widthPx / 2;
+  const sign = door.swingDirection === "left" ? -1 : 1;
+  ctx.beginPath();
+  ctx.moveTo(hingeX, sign * (thicknessPx / 2));
+  ctx.arc(
+    hingeX,
+    sign * (thicknessPx / 2),
+    widthPx,
+    sign > 0 ? -Math.PI / 2 : 0,
+    sign > 0 ? 0 : Math.PI / 2
+  );
+  ctx.strokeStyle = "#93c5fd"; // lighter blue, arc reads as secondary to the panel
+  ctx.stroke();
 
   ctx.restore();
 }
