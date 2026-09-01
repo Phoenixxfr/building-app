@@ -6,16 +6,18 @@ import {
   createWall,
   addWall,
 } from "./model/types";
-import { drawWall } from "./draw";
+import { drawWall, drawPlot, canvasSizeForPlot } from "./draw";
 
 /**
  * Milestone 1 demo (data) + first 2D drawing (Milestone 4, early).
  *
  * Builds one sample project (with a level and a wall), prints its
- * JSON, and draws that same wall on a canvas. No zoom, no pan, no
- * selection, no multiple walls yet — just proof the model's data can
- * be rendered visually and matches what's printed.
+ * JSON, and draws the plot boundary + that wall on a canvas sized to
+ * fit the plot. No zoom, no pan, no selection yet — just proof the
+ * model's data can be rendered visually, to scale.
  */
+const CANVAS_MARGIN_PX = 20;
+
 function buildSampleProject() {
   let project = createProject("Sample House", 60, 90);
 
@@ -37,6 +39,7 @@ function buildSampleProject() {
 function App() {
   const project = buildSampleProject();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasSize = canvasSizeForPlot(project.plot, CANVAS_MARGIN_PX);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -46,7 +49,9 @@ function App() {
 
     ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any transform from a previous run
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.translate(20, 20); // small margin so the wall isn't flush with the edge
+    ctx.translate(CANVAS_MARGIN_PX, CANVAS_MARGIN_PX);
+
+    drawPlot(ctx, project.plot);
 
     for (const wall of project.walls) {
       drawWall(ctx, wall);
@@ -57,11 +62,11 @@ function App() {
     <div style={{ padding: "2rem", fontFamily: "monospace" }}>
       <h1>Building Model — Demo</h1>
 
-      <p>The sample project's wall, drawn on a canvas (10px per foot):</p>
+      <p>The sample project's plot boundary and wall, drawn to scale:</p>
       <canvas
         ref={canvasRef}
-        width={400}
-        height={200}
+        width={canvasSize.width}
+        height={canvasSize.height}
         style={{ background: "#f5f5f5", border: "1px solid #ccc" }}
       />
 
