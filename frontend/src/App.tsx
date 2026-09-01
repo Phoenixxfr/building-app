@@ -5,16 +5,18 @@ import {
   addLevel,
   createWall,
   addWall,
+  createDoor,
+  addDoor,
 } from "./model/types";
-import { drawWall, drawPlot, canvasSizeForPlot } from "./draw";
+import { drawWall, drawPlot, drawDoor, canvasSizeForPlot } from "./draw";
 
 /**
  * Milestone 1 demo (data) + first 2D drawing (Milestone 4, early).
  *
- * Builds one sample project (with a level and a wall), prints its
- * JSON, and draws the plot boundary + that wall on a canvas sized to
- * fit the plot. No zoom, no pan, no selection yet — just proof the
- * model's data can be rendered visually, to scale.
+ * Builds one sample project (with a level, two walls, and a door),
+ * prints its JSON, and draws the plot boundary + walls + door on a
+ * canvas sized to fit the plot. No zoom, no pan, no selection yet —
+ * just proof the model's data can be rendered visually, to scale.
  */
 const CANVAS_MARGIN_PX = 20;
 
@@ -24,7 +26,7 @@ function buildSampleProject() {
   const groundFloor = createLevel("Ground Floor", 0);
   project = addLevel(project, groundFloor);
 
-    const wall1 = createWall(
+  const wall1 = createWall(
     groundFloor.id,
     { x: 0, y: 0 },
     { x: 20, y: 0 },
@@ -41,6 +43,9 @@ function buildSampleProject() {
     0.5
   );
   project = addWall(project, wall2);
+
+  const door = createDoor(wall1.id, 15, 3, 7);
+  project = addDoor(project, door);
 
   return project;
 }
@@ -62,8 +67,16 @@ function App() {
 
     drawPlot(ctx, project.plot);
 
-    for (const wall of project.walls) {
-      drawWall(ctx, wall);
+        for (const wall of project.walls) {
+      const wallDoors = project.doors.filter((d) => d.hostWallId === wall.id);
+      drawWall(ctx, wall, wallDoors);
+    }
+
+    for (const door of project.doors) {
+      const hostWall = project.walls.find((w) => w.id === door.hostWallId);
+      if (hostWall) {
+        drawDoor(ctx, door, hostWall);
+      }
     }
   }, [project]);
 
@@ -71,7 +84,10 @@ function App() {
     <div style={{ padding: "2rem", fontFamily: "monospace" }}>
       <h1>Building Model — Demo</h1>
 
-      <p>The sample project's plot boundary and wall, drawn to scale:</p>
+      <p>
+        The sample project's plot boundary, walls (dark), and door
+        (blue), drawn to scale:
+      </p>
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
