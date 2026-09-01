@@ -143,10 +143,23 @@ export function pointAlongWall(wall: Wall, positionFt: number): Point {
 }
 
 /**
- * Draws a door as a short blue segment centered on its position along
- * the host wall's centerline, so it's visually distinct from the wall
- * itself. Does not yet draw a swing arc or opening gap in the wall —
- * that's a later refinement once wall-opening geometry exists.
+ * Returns the angle (in radians) of a wall's direction, from its
+ * start point to its end point. Used to orient the door panel so it
+ * sits flush with the wall regardless of the wall's angle.
+ */
+export function wallAngleRadians(wall: Wall): number {
+  return Math.atan2(wall.end.y - wall.start.y, wall.end.x - wall.start.x);
+}
+
+/**
+ * Draws a door as a filled panel sitting in its opening — a rectangle
+ * the width of the door and the thickness of the host wall, rotated
+ * to match the wall's angle. This represents a closed door leaf
+ * filling the gap left in the wall by wallSegmentsWithOpenings.
+ *
+ * Does not yet draw a swing arc showing which way the door opens —
+ * that's a further refinement, and needs a swingDirection field on
+ * Door that doesn't exist yet.
  */
 export function drawDoor(
   ctx: CanvasRenderingContext2D,
@@ -154,26 +167,19 @@ export function drawDoor(
   hostWall: Wall
 ): void {
   const center = pointAlongWall(hostWall, door.positionFt);
-  const dx = hostWall.end.x - hostWall.start.x;
-  const dy = hostWall.end.y - hostWall.start.y;
-  const length = Math.sqrt(dx * dx + dy * dy) || 1;
-  const halfWidthFt = door.widthFt / 2;
-  const ux = dx / length;
-  const uy = dy / length;
+  const angle = wallAngleRadians(hostWall);
+  const widthPx = feetToPixels(door.widthFt);
+  const thicknessPx = Math.max(2, feetToPixels(hostWall.thicknessFt));
 
-  const start: Point = {
-    x: center.x - ux * halfWidthFt,
-    y: center.y - uy * halfWidthFt,
-  };
-  const end: Point = {
-    x: center.x + ux * halfWidthFt,
-    y: center.y + uy * halfWidthFt,
-  };
+  ctx.save();
+  ctx.translate(feetToPixels(center.x), feetToPixels(center.y));
+  ctx.rotate(angle);
 
-  ctx.beginPath();
-  ctx.moveTo(feetToPixels(start.x), feetToPixels(start.y));
-  ctx.lineTo(feetToPixels(end.x), feetToPixels(end.y));
-  ctx.lineWidth = Math.max(2, feetToPixels(hostWall.thicknessFt));
-  ctx.strokeStyle = "#2563eb";
-  ctx.stroke();
+  ctx.fillStyle = "#dbeafe"; // light blue panel fill
+  ctx.strokeStyle = "#2563eb"; // blue outline, matches earlier door color
+  ctx.lineWidth = 1;
+  ctx.fillRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
+  ctx.strokeRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
+
+  ctx.restore();
 }

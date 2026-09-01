@@ -5,6 +5,7 @@ import {
   canvasSizeForPlot,
   pointAlongWall,
   wallSegmentsWithOpenings,
+  wallAngleRadians,
 } from "./draw";
 
 describe("feetToPixels", () => {
@@ -118,5 +119,33 @@ describe("wallSegmentsWithOpenings", () => {
 
     // gap covers [0, 4], so only the far segment remains
     expect(segments).toEqual([{ start: { x: 4, y: 0 }, end: { x: 20, y: 0 } }]);
+  });
+});
+
+describe("wallAngleRadians", () => {
+  it("returns 0 for a horizontal wall pointing right", () => {
+    const wall = {
+      id: "w1",
+      levelId: "l1",
+      start: { x: 0, y: 0 },
+      end: { x: 20, y: 0 },
+      heightFt: 10,
+      thicknessFt: 0.5,
+    };
+
+    expect(wallAngleRadians(wall)).toBeCloseTo(0);
+  });
+
+  it("returns PI/2 for a vertical wall pointing down (+y)", () => {
+    const wall = {
+      id: "w1",
+      levelId: "l1",
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 15 },
+      heightFt: 10,
+      thicknessFt: 0.5,
+    };
+
+    expect(wallAngleRadians(wall)).toBeCloseTo(Math.PI / 2);
   });
 });
