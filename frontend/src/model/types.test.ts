@@ -100,7 +100,7 @@ describe("addDoor", () => {
       10,
       0.5
     );
-    const door = createDoor(wall.id, 5, 3, 7);
+    const door = createDoor(wall.id, 5, 3, 7, "left")
 
     const updated = addDoor(project, door);
 
@@ -117,7 +117,7 @@ describe("addDoor", () => {
       10,
       0.5
     );
-    const door = createDoor(wall.id, 5, 3, 7);
+    const door = createDoor(wall.id, 5, 3, 7, "left")
 
     addDoor(project, door);
 

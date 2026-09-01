@@ -44,7 +44,7 @@ function buildSampleProject() {
   );
   project = addWall(project, wall2);
 
-  const door = createDoor(wall1.id, 15, 3, 7);
+  const door = createDoor(wall1.id, 15, 3, 7, "left")
   project = addDoor(project, door);
 
   return project;

@@ -96,6 +96,7 @@ describe("wallSegmentsWithOpenings", () => {
       positionFt: 10,
       widthFt: 4,
       heightFt: 7,
+      swingDirection: "left" as const,
     };
 
     const segments = wallSegmentsWithOpenings(wall, [door]);
@@ -113,6 +114,7 @@ describe("wallSegmentsWithOpenings", () => {
       positionFt: 2,
       widthFt: 4,
       heightFt: 7,
+      swingDirection: "left" as const,
     };
 
     const segments = wallSegmentsWithOpenings(wall, [door]);

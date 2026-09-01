@@ -152,8 +152,12 @@ export function addWall(project: Project, wall: Wall): Project {
  * Wall referencing its Level.
  *
  * positionFt is the distance along the host wall's centerline (from
- * its start point) where the door's center sits. Intentionally does
- * NOT model swing direction or door type yet — those come later.
+ * its start point) where the door's center sits.
+ *
+ * swingDirection is which side of the wall the door opens toward
+ * ("left" or "right" of the direction from the wall's start to end).
+ * Used to draw the swing arc; does not yet model door type
+ * (single/double) — that comes later.
  */
 export interface Door {
   id: string;
@@ -162,14 +166,16 @@ export interface Door {
   positionFt: number;
   widthFt: number;
   heightFt: number;
+  swingDirection: "left" | "right";
 }
 
-/** Creates a new Door on the given wall, at the given position/width/height. */
+/** Creates a new Door on the given wall, at the given position/width/height, with the given swing direction. */
 export function createDoor(
   hostWallId: string,
   positionFt: number,
   widthFt: number,
-  heightFt: number
+  heightFt: number,
+  swingDirection: "left" | "right"
 ): Door {
   return {
     id: createId(),
@@ -177,6 +183,7 @@ export function createDoor(
     positionFt,
     widthFt,
     heightFt,
+    swingDirection,
   };
 }
 
