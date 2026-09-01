@@ -43,6 +43,57 @@ export interface Level {
   elevationFt: number;
 }
 
+/**
+ * The top-level container for a single building design.
+ * Everything else in the app (elements, views) will
+ * eventually hang off of a Project via its levels and walls.
+ */
+export interface Project {
+  id: string;
+  name: string;
+  plot: Plot;
+  levels: Level[];
+  walls: Wall[];
+  doors: Door[];
+}
+
+/** Creates a new Project with a given name and plot dimensions. Starts with no levels, walls, or doors. */
+export function createProject(
+  name: string,
+  widthFt: number,
+  depthFt: number
+): Project {
+  return {
+    id: createId(),
+    name,
+    plot: {
+      id: createId(),
+      widthFt,
+      depthFt,
+    },
+    levels: [],
+    walls: [],
+    doors: [],
+  };
+}
+
+/** Creates a new Level with a given name and elevation. */
+export function createLevel(name: string, elevationFt: number): Level {
+  return {
+    id: createId(),
+    name,
+    elevationFt,
+  };
+}
+
+/** Returns a new Project with the given level appended (does not mutate the original). */
+export function addLevel(project: Project, level: Level): Project {
+  return {
+    ...project,
+    levels: [...project.levels, level],
+  };
+}
+
 /** A 2D point in feet, used for wall endpoints. */
 export interface Point {
   x: number;
@@ -65,55 +116,6 @@ export interface Wall {
   end: Point;
   heightFt: number;
   thicknessFt: number;
-}
-
-/**
- * The top-level container for a single building design.
- * Everything else in the app (elements, views) will
- * eventually hang off of a Project via its levels and walls.
- */
-export interface Project {
-  id: string;
-  name: string;
-  plot: Plot;
-  levels: Level[];
-  walls: Wall[];
-}
-
-/** Creates a new Project with a given name and plot dimensions. Starts with no levels or walls. */
-export function createProject(
-  name: string,
-  widthFt: number,
-  depthFt: number
-): Project {
-  return {
-    id: createId(),
-    name,
-    plot: {
-      id: createId(),
-      widthFt,
-      depthFt,
-    },
-    levels: [],
-    walls: [],
-  };
-}
-
-/** Creates a new Level with a given name and elevation. */
-export function createLevel(name: string, elevationFt: number): Level {
-  return {
-    id: createId(),
-    name,
-    elevationFt,
-  };
-}
-
-/** Returns a new Project with the given level appended (does not mutate the original). */
-export function addLevel(project: Project, level: Level): Project {
-  return {
-    ...project,
-    levels: [...project.levels, level],
-  };
 }
 
 /** Creates a new Wall on the given level, from start to end, with the given height/thickness. */
@@ -139,5 +141,49 @@ export function addWall(project: Project, wall: Wall): Project {
   return {
     ...project,
     walls: [...project.walls, wall],
+  };
+}
+
+/**
+ * A door, hosted by a wall.
+ *
+ * References its Wall by ID (hostWallId) rather than nesting the Wall
+ * object, to avoid duplicated/out-of-sync data — same pattern as
+ * Wall referencing its Level.
+ *
+ * positionFt is the distance along the host wall's centerline (from
+ * its start point) where the door's center sits. Intentionally does
+ * NOT model swing direction or door type yet — those come later.
+ */
+export interface Door {
+  id: string;
+  hostWallId: string;
+  /** Distance in feet along the host wall's centerline to the door's center. */
+  positionFt: number;
+  widthFt: number;
+  heightFt: number;
+}
+
+/** Creates a new Door on the given wall, at the given position/width/height. */
+export function createDoor(
+  hostWallId: string,
+  positionFt: number,
+  widthFt: number,
+  heightFt: number
+): Door {
+  return {
+    id: createId(),
+    hostWallId,
+    positionFt,
+    widthFt,
+    heightFt,
+  };
+}
+
+/** Returns a new Project with the given door appended (does not mutate the original). */
+export function addDoor(project: Project, door: Door): Project {
+  return {
+    ...project,
+    doors: [...project.doors, door],
   };
 }

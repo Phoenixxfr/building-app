@@ -5,6 +5,8 @@ import {
   addLevel,
   createWall,
   addWall,
+  createDoor,
+  addDoor,
 } from "./types";
 
 describe("createProject", () => {
@@ -16,11 +18,12 @@ describe("createProject", () => {
     expect(project.plot.depthFt).toBe(90);
   });
 
-  it("starts with no levels or walls", () => {
+  it("starts with no levels, walls, or doors", () => {
     const project = createProject("My House", 60, 90);
 
     expect(project.levels).toEqual([]);
     expect(project.walls).toEqual([]);
+    expect(project.doors).toEqual([]);
   });
 
   it("gives each project and its plot a unique id", () => {
@@ -83,5 +86,41 @@ describe("addWall", () => {
     addWall(project, wall);
 
     expect(project.walls).toEqual([]);
+  });
+});
+
+describe("addDoor", () => {
+  it("returns a new project with the door appended", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(
+      level.id,
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      10,
+      0.5
+    );
+    const door = createDoor(wall.id, 5, 3, 7);
+
+    const updated = addDoor(project, door);
+
+    expect(updated.doors).toEqual([door]);
+  });
+
+  it("does not mutate the original project", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(
+      level.id,
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      10,
+      0.5
+    );
+    const door = createDoor(wall.id, 5, 3, 7);
+
+    addDoor(project, door);
+
+    expect(project.doors).toEqual([]);
   });
 });
