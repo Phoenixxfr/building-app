@@ -24,14 +24,23 @@ function buildSampleProject() {
   const groundFloor = createLevel("Ground Floor", 0);
   project = addLevel(project, groundFloor);
 
-  const wall = createWall(
+    const wall1 = createWall(
     groundFloor.id,
     { x: 0, y: 0 },
     { x: 20, y: 0 },
     10,
     0.5
   );
-  project = addWall(project, wall);
+  project = addWall(project, wall1);
+
+  const wall2 = createWall(
+    groundFloor.id,
+    { x: 20, y: 0 },
+    { x: 20, y: 15 },
+    10,
+    0.5
+  );
+  project = addWall(project, wall2);
 
   return project;
 }
