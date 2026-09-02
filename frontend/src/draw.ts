@@ -1,4 +1,7 @@
-import type { Door, Plot, Point, Wall } from "./model/types";
+import type { Door, Plot, Point, Wall, Window } from "./model/types";
+
+/** Minimal shape needed to treat something as an opening in a wall. */
+type Opening = { positionFt: number; widthFt: number };
 
 /**
  * Milestone 4 (early) — first 2D drawing code.
@@ -28,24 +31,24 @@ export function feetToPixels(feet: number): number {
  */
 export function wallSegmentsWithOpenings(
   wall: Wall,
-  doors: Door[]
+  openings: Opening[]
 ): { start: Point; end: Point }[] {
   const dx = wall.end.x - wall.start.x;
   const dy = wall.end.y - wall.start.y;
   const length = Math.sqrt(dx * dx + dy * dy);
 
-  if (length === 0 || doors.length === 0) {
+  if (length === 0 || openings.length === 0) {
     return [{ start: wall.start, end: wall.end }];
   }
 
-  // Each door's gap along the wall, as a [fromFt, toFt] range, sorted
-  // by position so segments can be built left-to-right.
-  const gaps = doors
-    .map((door) => {
-      const halfWidthFt = door.widthFt / 2;
+  // Each opening's gap along the wall, as a [fromFt, toFt] range,
+  // sorted by position so segments can be built left-to-right.
+  const gaps = openings
+    .map((opening) => {
+      const halfWidthFt = opening.widthFt / 2;
       return {
-        fromFt: door.positionFt - halfWidthFt,
-        toFt: door.positionFt + halfWidthFt,
+        fromFt: opening.positionFt - halfWidthFt,
+        toFt: opening.positionFt + halfWidthFt,
       };
     })
     .sort((a, b) => a.fromFt - b.fromFt);
@@ -81,9 +84,10 @@ export function wallSegmentsWithOpenings(
 export function drawWall(
   ctx: CanvasRenderingContext2D,
   wall: Wall,
-  doors: Door[] = []
+  doors: Door[] = [],
+  windows: Window[] = []
 ): void {
-  const segments = wallSegmentsWithOpenings(wall, doors);
+  const segments = wallSegmentsWithOpenings(wall, [...doors, ...windows]);
 
   ctx.lineWidth = Math.max(1, feetToPixels(wall.thicknessFt));
   ctx.strokeStyle = "#333";
@@ -178,7 +182,7 @@ export function drawDoor(
   ctx.fillStyle = "#dbeafe"; // light blue panel fill
   ctx.strokeStyle = "#2563eb"; // blue outline, matches earlier door color
   ctx.lineWidth = 1;
-   ctx.fillRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
+  ctx.fillRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
   ctx.strokeRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
 
   // Swing arc: quarter circle from the hinge (one jamb) showing the
@@ -195,6 +199,34 @@ export function drawDoor(
     sign > 0 ? 0 : Math.PI / 2
   );
   ctx.strokeStyle = "#93c5fd"; // lighter blue, arc reads as secondary to the panel
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/**
+ * Draws a window as a thin line across its opening in the wall
+ * (representing glass), rotated to match the wall's angle. Simpler
+ * than a door — no panel, no swing.
+ */
+export function drawWindow(
+  ctx: CanvasRenderingContext2D,
+  win: Window,
+  hostWall: Wall
+): void {
+  const center = pointAlongWall(hostWall, win.positionFt);
+  const angle = wallAngleRadians(hostWall);
+  const widthPx = feetToPixels(win.widthFt);
+
+  ctx.save();
+  ctx.translate(feetToPixels(center.x), feetToPixels(center.y));
+  ctx.rotate(angle);
+
+  ctx.strokeStyle = "#0ea5e9"; // sky blue, distinct from door blue
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-widthPx / 2, 0);
+  ctx.lineTo(widthPx / 2, 0);
   ctx.stroke();
 
   ctx.restore();

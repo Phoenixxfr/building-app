@@ -7,8 +7,10 @@ import {
   addWall,
   createDoor,
   addDoor,
+  createWindow,
+  addWindow,
 } from "./model/types";
-import { drawWall, drawPlot, drawDoor, canvasSizeForPlot } from "./draw";
+import { drawWall, drawPlot, drawDoor, drawWindow, canvasSizeForPlot } from "./draw";
 
 /**
  * Milestone 1 demo (data) + first 2D drawing (Milestone 4, early).
@@ -44,8 +46,11 @@ function buildSampleProject() {
   );
   project = addWall(project, wall2);
 
-  const door = createDoor(wall1.id, 15, 3, 7, "left")
+  const door = createDoor(wall1.id, 15, 3, 7, "left");
   project = addDoor(project, door);
+
+  const win = createWindow(wall2.id, 7, 4, 4);
+  project = addWindow(project, win);
 
   return project;
 }
@@ -67,15 +72,23 @@ function App() {
 
     drawPlot(ctx, project.plot);
 
-        for (const wall of project.walls) {
+    for (const wall of project.walls) {
       const wallDoors = project.doors.filter((d) => d.hostWallId === wall.id);
-      drawWall(ctx, wall, wallDoors);
+      const wallWindows = project.windows.filter((w) => w.hostWallId === wall.id);
+      drawWall(ctx, wall, wallDoors, wallWindows);
     }
 
     for (const door of project.doors) {
       const hostWall = project.walls.find((w) => w.id === door.hostWallId);
       if (hostWall) {
         drawDoor(ctx, door, hostWall);
+      }
+    }
+
+    for (const win of project.windows) {
+      const hostWall = project.walls.find((w) => w.id === win.hostWallId);
+      if (hostWall) {
+        drawWindow(ctx, win, hostWall);
       }
     }
   }, [project]);
