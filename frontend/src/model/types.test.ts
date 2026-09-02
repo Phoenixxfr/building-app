@@ -9,6 +9,8 @@ import {
   addDoor,
   createWindow,
   addWindow,
+  createRoom,
+  addRoom
 } from "./types";
 
 describe("createProject", () => {
@@ -137,5 +139,15 @@ describe("addWindow", () => {
     const updated = addWindow(project, win);
 
     expect(updated.windows).toEqual([win]);
+  });
+});
+describe("addRoom", () => {
+  it("returns a new project with the room appended", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const room = createRoom("Living Room", [wall.id]);
+    const updated = addRoom(project, room);
+    expect(updated.rooms).toEqual([room]);
   });
 });

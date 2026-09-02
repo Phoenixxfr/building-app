@@ -56,6 +56,7 @@ export interface Project {
   walls: Wall[];
   doors: Door[];
   windows: Window[];
+  rooms: Room[];
 }
 
 /** Creates a new Project with a given name and plot dimensions. Starts with no levels, walls, or doors. */
@@ -76,6 +77,7 @@ export function createProject(
     walls: [],
     doors: [],
     windows: [],
+    rooms: [],
   };
 }
 
@@ -228,4 +230,23 @@ export function addWindow(project: Project, window: Window): Project {
     ...project,
     windows: [...project.windows, window],
   };
+}
+/**
+ * A room, defined by the walls that bound it (referenced by ID, in
+ * order around the boundary). Does not store its own geometry —
+ * area/shape are derived from the referenced walls, not duplicated
+ * here, to keep the walls as the single source of truth.
+ */
+export interface Room {
+  id: string;
+  name: string;
+  wallIds: string[];
+}
+
+export function createRoom(name: string, wallIds: string[]): Room {
+  return { id: createId(), name, wallIds };
+}
+
+export function addRoom(project: Project, room: Room): Project {
+  return { ...project, rooms: [...project.rooms, room] };
 }
