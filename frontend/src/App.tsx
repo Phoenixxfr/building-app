@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createProject,
   createLevel,
@@ -10,16 +10,16 @@ import {
   createWindow,
   addWindow,
 } from "./model/types";
-import { drawWall, drawPlot, drawDoor, drawWindow, canvasSizeForPlot } from "./draw";
+import {
+  drawWall,
+  drawPlot,
+  drawDoor,
+  drawWindow,
+  canvasSizeForPlot,
+  distanceToWall,
+  PIXELS_PER_FOOT,
+} from "./draw";
 
-/**
- * Milestone 1 demo (data) + first 2D drawing (Milestone 4, early).
- *
- * Builds one sample project (with a level, two walls, and a door),
- * prints its JSON, and draws the plot boundary + walls + door on a
- * canvas sized to fit the plot. No zoom, no pan, no selection yet —
- * just proof the model's data can be rendered visually, to scale.
- */
 const CANVAS_MARGIN_PX = 20;
 
 function buildSampleProject() {
@@ -56,9 +56,10 @@ function buildSampleProject() {
 }
 
 function App() {
-  const project = buildSampleProject();
+    const [project] = useState(() => buildSampleProject());
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasSize = canvasSizeForPlot(project.plot, CANVAS_MARGIN_PX);
+  const [selectedWallId, setSelectedWallId] = useState<string | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,7 +67,7 @@ function App() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any transform from a previous run
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.translate(CANVAS_MARGIN_PX, CANVAS_MARGIN_PX);
 
@@ -75,7 +76,7 @@ function App() {
     for (const wall of project.walls) {
       const wallDoors = project.doors.filter((d) => d.hostWallId === wall.id);
       const wallWindows = project.windows.filter((w) => w.hostWallId === wall.id);
-      drawWall(ctx, wall, wallDoors, wallWindows);
+      drawWall(ctx, wall, wallDoors, wallWindows, wall.id === selectedWallId);
     }
 
     for (const door of project.doors) {
@@ -91,21 +92,32 @@ function App() {
         drawWindow(ctx, win, hostWall);
       }
     }
-  }, [project]);
+  }, [project, selectedWallId]);
+
+  function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const clickXFt = (e.clientX - rect.left - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT;
+    const clickYFt = (e.clientY - rect.top - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT;
+    
+    const clicked = project.walls.find(
+      (wall) => distanceToWall({ x: clickXFt, y: clickYFt }, wall) < 2
+    );
+    setSelectedWallId(clicked ? clicked.id : null);
+  }
 
   return (
     <div style={{ padding: "2rem", fontFamily: "monospace" }}>
       <h1>Building Model — Demo</h1>
 
-      <p>
-        The sample project's plot boundary, walls (dark), and door
-        (blue), drawn to scale:
-      </p>
+      <p>Click a wall below to select it (turns red):</p>
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
         height={canvasSize.height}
-        style={{ background: "#f5f5f5", border: "1px solid #ccc" }}
+        style={{ background: "#f5f5f5", border: "1px solid #ccc", cursor: "pointer" }}
+        onClick={handleCanvasClick}
       />
 
       <p>Same project, as JSON:</p>

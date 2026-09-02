@@ -6,6 +6,7 @@ import {
   pointAlongWall,
   wallSegmentsWithOpenings,
   wallAngleRadians,
+  distanceToWall,
 } from "./draw";
 
 describe("feetToPixels", () => {
@@ -149,5 +150,27 @@ describe("wallAngleRadians", () => {
     };
 
     expect(wallAngleRadians(wall)).toBeCloseTo(Math.PI / 2);
+  });
+});
+describe("distanceToWall", () => {
+  const wall = {
+    id: "w1",
+    levelId: "l1",
+    start: { x: 0, y: 0 },
+    end: { x: 20, y: 0 },
+    heightFt: 10,
+    thicknessFt: 0.5,
+  };
+
+  it("returns 0 for a point on the wall's centerline", () => {
+    expect(distanceToWall({ x: 10, y: 0 }, wall)).toBeCloseTo(0);
+  });
+
+  it("returns the perpendicular distance for a point off the wall", () => {
+    expect(distanceToWall({ x: 10, y: 3 }, wall)).toBeCloseTo(3);
+  });
+
+  it("returns distance to nearest endpoint when beyond the wall's ends", () => {
+    expect(distanceToWall({ x: -4, y: 0 }, wall)).toBeCloseTo(4);
   });
 });

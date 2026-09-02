@@ -85,12 +85,13 @@ export function drawWall(
   ctx: CanvasRenderingContext2D,
   wall: Wall,
   doors: Door[] = [],
-  windows: Window[] = []
+  windows: Window[] = [],
+  isSelected: boolean = false
 ): void {
   const segments = wallSegmentsWithOpenings(wall, [...doors, ...windows]);
 
   ctx.lineWidth = Math.max(1, feetToPixels(wall.thicknessFt));
-  ctx.strokeStyle = "#333";
+  ctx.strokeStyle = isSelected ? "#dc2626" : "#333";
 
   for (const segment of segments) {
     ctx.beginPath();
@@ -230,4 +231,28 @@ export function drawWindow(
   ctx.stroke();
 
   ctx.restore();
+}
+/**
+ * Shortest distance (in feet) from a point to a wall's centerline
+ * segment. Used for click-to-select hit testing.
+ */
+export function distanceToWall(point: Point, wall: Wall): number {
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  const lengthSq = dx * dx + dy * dy;
+
+  if (lengthSq === 0) {
+    const ddx = point.x - wall.start.x;
+    const ddy = point.y - wall.start.y;
+    return Math.sqrt(ddx * ddx + ddy * ddy);
+  }
+
+  let t = ((point.x - wall.start.x) * dx + (point.y - wall.start.y) * dy) / lengthSq;
+  t = Math.max(0, Math.min(1, t));
+
+  const closestX = wall.start.x + t * dx;
+  const closestY = wall.start.y + t * dy;
+  const ddx = point.x - closestX;
+  const ddy = point.y - closestY;
+  return Math.sqrt(ddx * ddx + ddy * ddy);
 }
