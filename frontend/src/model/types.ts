@@ -55,6 +55,7 @@ export interface Project {
   levels: Level[];
   walls: Wall[];
   doors: Door[];
+  windows: Window[];
 }
 
 /** Creates a new Project with a given name and plot dimensions. Starts with no levels, walls, or doors. */
@@ -74,6 +75,7 @@ export function createProject(
     levels: [],
     walls: [],
     doors: [],
+    windows: [],
   };
 }
 
@@ -192,5 +194,38 @@ export function addDoor(project: Project, door: Door): Project {
   return {
     ...project,
     doors: [...project.doors, door],
+  };
+}
+
+/** A window, hosted by a wall. Same pattern as Door, minus swing direction. */
+export interface Window {
+  id: string;
+  hostWallId: string;
+  positionFt: number;
+  widthFt: number;
+  heightFt: number;
+}
+
+/** Creates a new Window on the given wall, at the given position/width/height. */
+export function createWindow(
+  hostWallId: string,
+  positionFt: number,
+  widthFt: number,
+  heightFt: number
+): Window {
+  return {
+    id: createId(),
+    hostWallId,
+    positionFt,
+    widthFt,
+    heightFt,
+  };
+}
+
+/** Returns a new Project with the given window appended (does not mutate the original). */
+export function addWindow(project: Project, window: Window): Project {
+  return {
+    ...project,
+    windows: [...project.windows, window],
   };
 }

@@ -7,6 +7,8 @@ import {
   addWall,
   createDoor,
   addDoor,
+  createWindow,
+  addWindow,
 } from "./types";
 
 describe("createProject", () => {
@@ -100,7 +102,7 @@ describe("addDoor", () => {
       10,
       0.5
     );
-    const door = createDoor(wall.id, 5, 3, 7, "left")
+    const door = createDoor(wall.id, 5, 3, 7, "left");
 
     const updated = addDoor(project, door);
 
@@ -117,10 +119,23 @@ describe("addDoor", () => {
       10,
       0.5
     );
-    const door = createDoor(wall.id, 5, 3, 7, "left")
+    const door = createDoor(wall.id, 5, 3, 7, "left");
 
     addDoor(project, door);
 
     expect(project.doors).toEqual([]);
+  });
+});
+
+describe("addWindow", () => {
+  it("returns a new project with the window appended", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const win = createWindow(wall.id, 5, 3, 4);
+
+    const updated = addWindow(project, win);
+
+    expect(updated.windows).toEqual([win]);
   });
 });
