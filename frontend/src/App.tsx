@@ -106,6 +106,13 @@ function App() {
     );
     setSelectedWallId(clicked ? clicked.id : null);
   }
+    const selectedWall = project.walls.find((w) => w.id === selectedWallId);
+  const selectedWallLengthFt = selectedWall
+    ? Math.sqrt(
+        Math.pow(selectedWall.end.x - selectedWall.start.x, 2) +
+          Math.pow(selectedWall.end.y - selectedWall.start.y, 2)
+      )
+    : null;
 
   return (
     <div style={{ padding: "2rem", fontFamily: "monospace" }}>
@@ -119,6 +126,9 @@ function App() {
         style={{ background: "#f5f5f5", border: "1px solid #ccc", cursor: "pointer" }}
         onClick={handleCanvasClick}
       />
+            {selectedWallLengthFt !== null && (
+        <p>Selected wall length: {selectedWallLengthFt.toFixed(1)} ft</p>
+      )}
 
       <p>Same project, as JSON:</p>
       <pre
