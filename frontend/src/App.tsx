@@ -17,8 +17,16 @@ import {
   drawWindow,
   canvasSizeForPlot,
   distanceToWall,
+  distanceToOpening,
   PIXELS_PER_FOOT,
 } from "./draw";
+
+/** What's currently selected on the canvas, if anything. */
+type Selection =
+  | { type: "wall"; id: string }
+  | { type: "door"; id: string }
+  | { type: "window"; id: string }
+  | null;
 
 const CANVAS_MARGIN_PX = 20;
 
@@ -59,7 +67,7 @@ function App() {
     const [project] = useState(() => buildSampleProject());
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasSize = canvasSizeForPlot(project.plot, CANVAS_MARGIN_PX);
-  const [selectedWallId, setSelectedWallId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<Selection>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -73,27 +81,26 @@ function App() {
 
     drawPlot(ctx, project.plot);
 
-    for (const wall of project.walls) {
+       for (const wall of project.walls) {
       const wallDoors = project.doors.filter((d) => d.hostWallId === wall.id);
       const wallWindows = project.windows.filter((w) => w.hostWallId === wall.id);
-      drawWall(ctx, wall, wallDoors, wallWindows, wall.id === selectedWallId);
+      drawWall(ctx, wall, wallDoors, wallWindows, selection?.type === "wall" && selection.id === wall.id);
     }
 
     for (const door of project.doors) {
       const hostWall = project.walls.find((w) => w.id === door.hostWallId);
       if (hostWall) {
-        drawDoor(ctx, door, hostWall);
+        drawDoor(ctx, door, hostWall, selection?.type === "door" && selection.id === door.id);
       }
     }
 
     for (const win of project.windows) {
       const hostWall = project.walls.find((w) => w.id === win.hostWallId);
       if (hostWall) {
-        drawWindow(ctx, win, hostWall);
+        drawWindow(ctx, win, hostWall, selection?.type === "window" && selection.id === win.id);
       }
     }
-  }, [project, selectedWallId]);
-
+  }, [project, selection]);
   function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -101,12 +108,35 @@ function App() {
     const clickXFt = (e.clientX - rect.left - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT;
     const clickYFt = (e.clientY - rect.top - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT;
     
-    const clicked = project.walls.find(
-      (wall) => distanceToWall({ x: clickXFt, y: clickYFt }, wall) < 2
+        const clickPoint = { x: clickXFt, y: clickYFt };
+    const HIT_TOLERANCE_FT = 2;
+
+    const clickedDoor = project.doors.find((door) => {
+      const hostWall = project.walls.find((w) => w.id === door.hostWallId);
+      return hostWall && distanceToOpening(clickPoint, hostWall, door) < HIT_TOLERANCE_FT;
+    });
+    if (clickedDoor) {
+      setSelection({ type: "door", id: clickedDoor.id });
+      return;
+    }
+
+    const clickedWindow = project.windows.find((win) => {
+      const hostWall = project.walls.find((w) => w.id === win.hostWallId);
+      return hostWall && distanceToOpening(clickPoint, hostWall, win) < HIT_TOLERANCE_FT;
+    });
+    if (clickedWindow) {
+      setSelection({ type: "window", id: clickedWindow.id });
+      return;
+    }
+
+    const clickedWall = project.walls.find(
+      (wall) => distanceToWall(clickPoint, wall) < HIT_TOLERANCE_FT
     );
-    setSelectedWallId(clicked ? clicked.id : null);
+    setSelection(clickedWall ? { type: "wall", id: clickedWall.id } : null);
   }
-    const selectedWall = project.walls.find((w) => w.id === selectedWallId);
+
+  const selectedWall =
+    selection?.type === "wall" ? project.walls.find((w) => w.id === selection.id) : undefined;
   const selectedWallLengthFt = selectedWall
     ? Math.sqrt(
         Math.pow(selectedWall.end.x - selectedWall.start.x, 2) +
@@ -114,11 +144,16 @@ function App() {
       )
     : null;
 
+  const selectedDoor =
+    selection?.type === "door" ? project.doors.find((d) => d.id === selection.id) : undefined;
+  const selectedWindow =
+    selection?.type === "window" ? project.windows.find((w) => w.id === selection.id) : undefined;
+
   return (
     <div style={{ padding: "2rem", fontFamily: "monospace" }}>
       <h1>Building Model — Demo</h1>
 
-      <p>Click a wall below to select it (turns red):</p>
+            <p>Click a wall, door, or window below to select it (turns red):</p>
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
@@ -126,8 +161,18 @@ function App() {
         style={{ background: "#f5f5f5", border: "1px solid #ccc", cursor: "pointer" }}
         onClick={handleCanvasClick}
       />
-            {selectedWallLengthFt !== null && (
+                        {selectedWallLengthFt !== null && (
         <p>Selected wall length: {selectedWallLengthFt.toFixed(1)} ft</p>
+      )}
+      {selectedDoor && (
+        <p>
+          Selected door: {selectedDoor.widthFt} ft wide, {selectedDoor.heightFt} ft high
+        </p>
+      )}
+      {selectedWindow && (
+        <p>
+          Selected window: {selectedWindow.widthFt} ft wide, {selectedWindow.heightFt} ft high
+        </p>
       )}
 
       <p>Same project, as JSON:</p>

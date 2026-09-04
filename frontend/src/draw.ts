@@ -169,7 +169,8 @@ export function wallAngleRadians(wall: Wall): number {
 export function drawDoor(
   ctx: CanvasRenderingContext2D,
   door: Door,
-  hostWall: Wall
+  hostWall: Wall,
+  isSelected: boolean = false
 ): void {
   const center = pointAlongWall(hostWall, door.positionFt);
   const angle = wallAngleRadians(hostWall);
@@ -181,7 +182,7 @@ export function drawDoor(
   ctx.rotate(angle);
 
   ctx.fillStyle = "#dbeafe"; // light blue panel fill
-  ctx.strokeStyle = "#2563eb"; // blue outline, matches earlier door color
+  ctx.strokeStyle = isSelected ? "#dc2626" : "#2563eb"; // red when selected, else blue
   ctx.lineWidth = 1;
   ctx.fillRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
   ctx.strokeRect(-widthPx / 2, -thicknessPx / 2, widthPx, thicknessPx);
@@ -213,7 +214,8 @@ export function drawDoor(
 export function drawWindow(
   ctx: CanvasRenderingContext2D,
   win: Window,
-  hostWall: Wall
+  hostWall: Wall,
+  isSelected: boolean = false
 ): void {
   const center = pointAlongWall(hostWall, win.positionFt);
   const angle = wallAngleRadians(hostWall);
@@ -223,7 +225,7 @@ export function drawWindow(
   ctx.translate(feetToPixels(center.x), feetToPixels(center.y));
   ctx.rotate(angle);
 
-  ctx.strokeStyle = "#0ea5e9"; // sky blue, distinct from door blue
+  ctx.strokeStyle = isSelected ? "#dc2626" : "#0ea5e9"; // red when selected, else sky blue
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-widthPx / 2, 0);
@@ -232,6 +234,31 @@ export function drawWindow(
 
   ctx.restore();
 }
+/**
+ * Shortest distance (in feet) from a point to a door/window's opening
+ * on its host wall. The opening is treated as a segment of length
+ * widthFt centered at positionFt along the wall, oriented with the
+ * wall (same projection approach as distanceToWall).
+ */
+export function distanceToOpening(point: Point, hostWall: Wall, opening: Opening): number {
+  const center = pointAlongWall(hostWall, opening.positionFt);
+  const angle = wallAngleRadians(hostWall);
+
+  // Project the click point into the wall's local frame (centered on
+  // the opening), so the opening's half-width becomes a simple range
+  // check along the local x-axis, and perpendicular offset is local y.
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  const localX = dx * Math.cos(angle) + dy * Math.sin(angle);
+  const localY = -dx * Math.sin(angle) + dy * Math.cos(angle);
+
+  const halfWidth = opening.widthFt / 2;
+  const clampedX = Math.max(-halfWidth, Math.min(halfWidth, localX));
+  const ddx = localX - clampedX;
+  const ddy = localY;
+  return Math.sqrt(ddx * ddx + ddy * ddy);
+}
+
 /**
  * Shortest distance (in feet) from a point to a wall's centerline
  * segment. Used for click-to-select hit testing.
