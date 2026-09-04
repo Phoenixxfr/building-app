@@ -5,6 +5,7 @@ import {
   addLevel,
   createWall,
   addWall,
+  removeWall,
   createDoor,
   addDoor,
   createWindow,
@@ -90,6 +91,50 @@ describe("addWall", () => {
     addWall(project, wall);
 
     expect(project.walls).toEqual([]);
+  });
+});
+
+describe("removeWall", () => {
+  it("removes the wall and returns a new project", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall1 = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const wall2 = createWall(level.id, { x: 20, y: 0 }, { x: 20, y: 15 }, 10, 0.5);
+    let updated = addWall(project, wall1);
+    updated = addWall(updated, wall2);
+
+    updated = removeWall(updated, wall1.id);
+
+    expect(updated.walls).toEqual([wall2]);
+  });
+
+  it("also removes doors and windows hosted on the removed wall", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const door = createDoor(wall.id, 5, 3, 7, "left");
+    const win = createWindow(wall.id, 10, 4, 4);
+
+    let updated = addWall(project, wall);
+    updated = addDoor(updated, door);
+    updated = addWindow(updated, win);
+
+    updated = removeWall(updated, wall.id);
+
+    expect(updated.walls).toEqual([]);
+    expect(updated.doors).toEqual([]);
+    expect(updated.windows).toEqual([]);
+  });
+
+  it("does not mutate the original project", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const updated = addWall(project, wall);
+
+    removeWall(updated, wall.id);
+
+    expect(updated.walls).toEqual([wall]);
   });
 });
 

@@ -5,6 +5,7 @@ import {
   addLevel,
   createWall,
   addWall,
+  removeWall,
   createDoor,
   addDoor,
   createWindow,
@@ -64,10 +65,57 @@ function buildSampleProject() {
 }
 
 function App() {
-    const [project] = useState(() => buildSampleProject());
+  const [project, setProject] = useState(() => buildSampleProject());
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasSize = canvasSizeForPlot(project.plot, CANVAS_MARGIN_PX);
   const [selection, setSelection] = useState<Selection>(null);
+
+  const [startX, setStartX] = useState("0");
+  const [startY, setStartY] = useState("0");
+  const [endX, setEndX] = useState("0");
+  const [endY, setEndY] = useState("0");
+  const [heightFt, setHeightFt] = useState("10");
+  const [thicknessFt, setThicknessFt] = useState("0.5");
+
+  function handleAddWall(e: React.FormEvent) {
+    e.preventDefault();
+
+    const parsed = {
+      startX: parseFloat(startX),
+      startY: parseFloat(startY),
+      endX: parseFloat(endX),
+      endY: parseFloat(endY),
+      heightFt: parseFloat(heightFt),
+      thicknessFt: parseFloat(thicknessFt),
+    };
+
+    const allValid = Object.values(parsed).every((n) => Number.isFinite(n));
+    if (!allValid || parsed.heightFt <= 0 || parsed.thicknessFt <= 0) {
+      alert("Please enter valid numbers (height and thickness must be positive).");
+      return;
+    }
+
+    const level = project.levels[0];
+    if (!level) {
+      alert("No level exists to add a wall to.");
+      return;
+    }
+
+    const newWall = createWall(
+      level.id,
+      { x: parsed.startX, y: parsed.startY },
+      { x: parsed.endX, y: parsed.endY },
+      parsed.heightFt,
+      parsed.thicknessFt
+    );
+    setProject((p) => addWall(p, newWall));
+  }
+
+  function handleDeleteWall() {
+    if (selection?.type !== "wall") return;
+    setProject((p) => removeWall(p, selection.id));
+    setSelection(null);
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -81,7 +129,7 @@ function App() {
 
     drawPlot(ctx, project.plot);
 
-       for (const wall of project.walls) {
+    for (const wall of project.walls) {
       const wallDoors = project.doors.filter((d) => d.hostWallId === wall.id);
       const wallWindows = project.windows.filter((w) => w.hostWallId === wall.id);
       drawWall(ctx, wall, wallDoors, wallWindows, selection?.type === "wall" && selection.id === wall.id);
@@ -101,6 +149,7 @@ function App() {
       }
     }
   }, [project, selection]);
+
   function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -108,7 +157,7 @@ function App() {
     const clickXFt = (e.clientX - rect.left - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT;
     const clickYFt = (e.clientY - rect.top - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT;
     
-        const clickPoint = { x: clickXFt, y: clickYFt };
+    const clickPoint = { x: clickXFt, y: clickYFt };
     const HIT_TOLERANCE_FT = 2;
 
     const clickedDoor = project.doors.find((door) => {
@@ -153,7 +202,7 @@ function App() {
     <div style={{ padding: "2rem", fontFamily: "monospace" }}>
       <h1>Building Model — Demo</h1>
 
-            <p>Click a wall, door, or window below to select it (turns red):</p>
+      <p>Click a wall, door, or window below to select it (turns red):</p>
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
@@ -161,8 +210,11 @@ function App() {
         style={{ background: "#f5f5f5", border: "1px solid #ccc", cursor: "pointer" }}
         onClick={handleCanvasClick}
       />
-                        {selectedWallLengthFt !== null && (
-        <p>Selected wall length: {selectedWallLengthFt.toFixed(1)} ft</p>
+            {selectedWallLengthFt !== null && (
+        <p>
+          Selected wall length: {selectedWallLengthFt.toFixed(1)} ft{" "}
+          <button onClick={handleDeleteWall}>Delete Wall</button>
+        </p>
       )}
       {selectedDoor && (
         <p>
@@ -174,6 +226,29 @@ function App() {
           Selected window: {selectedWindow.widthFt} ft wide, {selectedWindow.heightFt} ft high
         </p>
       )}
+
+      <h2>Add a wall</h2>
+      <form onSubmit={handleAddWall} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+        <label>
+          Start X <input value={startX} onChange={(e) => setStartX(e.target.value)} size={4} />
+        </label>
+        <label>
+          Start Y <input value={startY} onChange={(e) => setStartY(e.target.value)} size={4} />
+        </label>
+        <label>
+          End X <input value={endX} onChange={(e) => setEndX(e.target.value)} size={4} />
+        </label>
+        <label>
+          End Y <input value={endY} onChange={(e) => setEndY(e.target.value)} size={4} />
+        </label>
+        <label>
+          Height (ft) <input value={heightFt} onChange={(e) => setHeightFt(e.target.value)} size={4} />
+        </label>
+        <label>
+          Thickness (ft) <input value={thicknessFt} onChange={(e) => setThicknessFt(e.target.value)} size={4} />
+        </label>
+        <button type="submit">Add Wall</button>
+      </form>
 
       <p>Same project, as JSON:</p>
       <pre

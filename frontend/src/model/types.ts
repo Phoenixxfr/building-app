@@ -149,6 +149,20 @@ export function addWall(project: Project, wall: Wall): Project {
 }
 
 /**
+ * Returns a new Project with the given wall removed, along with any
+ * doors/windows hosted on it (otherwise they'd be left pointing at a
+ * wall that no longer exists).
+ */
+export function removeWall(project: Project, wallId: string): Project {
+  return {
+    ...project,
+    walls: project.walls.filter((w) => w.id !== wallId),
+    doors: project.doors.filter((d) => d.hostWallId !== wallId),
+    windows: project.windows.filter((w) => w.hostWallId !== wallId),
+  };
+}
+
+/**
  * A door, hosted by a wall.
  *
  * References its Wall by ID (hostWallId) rather than nesting the Wall
