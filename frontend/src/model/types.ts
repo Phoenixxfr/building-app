@@ -163,6 +163,17 @@ export function removeWall(project: Project, wallId: string): Project {
 }
 
 /**
+ * Returns a new Project with the given wall's start/end points
+ * replaced. Used for drag-to-move — translates the whole wall.
+ */
+export function updateWall(project: Project, wallId: string, start: Point, end: Point): Project {
+  return {
+    ...project,
+    walls: project.walls.map((w) => (w.id === wallId ? { ...w, start, end } : w)),
+  };
+}
+
+/**
  * A door, hosted by a wall.
  *
  * References its Wall by ID (hostWallId) rather than nesting the Wall
@@ -221,6 +232,17 @@ export function removeDoor(project: Project, doorId: string): Project {
   };
 }
 
+/**
+ * Returns a new Project with the given door's position along its
+ * host wall updated. Used for drag-to-move (sliding along the wall).
+ */
+export function updateDoorPosition(project: Project, doorId: string, positionFt: number): Project {
+  return {
+    ...project,
+    doors: project.doors.map((d) => (d.id === doorId ? { ...d, positionFt } : d)),
+  };
+}
+
 /** A window, hosted by a wall. Same pattern as Door, minus swing direction. */
 export interface Window {
   id: string;
@@ -259,6 +281,17 @@ export function removeWindow(project: Project, windowId: string): Project {
   return {
     ...project,
     windows: project.windows.filter((w) => w.id !== windowId),
+  };
+}
+
+/**
+ * Returns a new Project with the given window's position along its
+ * host wall updated. Used for drag-to-move (sliding along the wall).
+ */
+export function updateWindowPosition(project: Project, windowId: string, positionFt: number): Project {
+  return {
+    ...project,
+    windows: project.windows.map((w) => (w.id === windowId ? { ...w, positionFt } : w)),
   };
 }
 /**

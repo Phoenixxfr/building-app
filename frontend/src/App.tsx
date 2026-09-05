@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { Point } from "./model/types";
 import {
   createProject,
   createLevel,
@@ -6,12 +7,15 @@ import {
   createWall,
   addWall,
   removeWall,
+  updateWall,
   createDoor,
   addDoor,
   removeDoor,
+  updateDoorPosition,
   createWindow,
   addWindow,
   removeWindow,
+  updateWindowPosition,
 } from "./model/types";
 import {
   drawWall,
@@ -21,6 +25,7 @@ import {
   canvasSizeForPlot,
   distanceToWall,
   distanceToOpening,
+  positionFtAlongWall,
   PIXELS_PER_FOOT,
 } from "./draw";
 
@@ -29,6 +34,12 @@ type Selection =
   | { type: "wall"; id: string }
   | { type: "door"; id: string }
   | { type: "window"; id: string }
+  | null;
+
+/** In-progress drag, tracked in a ref so mousemove handlers stay cheap. */
+type DragState =
+  | { kind: "wall"; id: string; startClientX: number; startClientY: number; originalStart: Point; originalEnd: Point }
+  | { kind: "door" | "window"; id: string; hostWallId: string }
   | null;
 
 const CANVAS_MARGIN_PX = 20;
@@ -69,6 +80,7 @@ function buildSampleProject() {
 function App() {
   const [project, setProject] = useState(() => buildSampleProject());
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dragRef = useRef<DragState>(null);
   const canvasSize = canvasSizeForPlot(project.plot, CANVAS_MARGIN_PX);
   const [selection, setSelection] = useState<Selection>(null);
 
@@ -205,38 +217,114 @@ function App() {
     }
   }, [project, selection]);
 
-  function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const clickXFt = (e.clientX - rect.left - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT;
-    const clickYFt = (e.clientY - rect.top - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT;
-    
-    const clickPoint = { x: clickXFt, y: clickYFt };
+  function hitTestAt(clickPoint: { x: number; y: number }): Selection {
     const HIT_TOLERANCE_FT = 2;
 
     const clickedDoor = project.doors.find((door) => {
       const hostWall = project.walls.find((w) => w.id === door.hostWallId);
       return hostWall && distanceToOpening(clickPoint, hostWall, door) < HIT_TOLERANCE_FT;
     });
-    if (clickedDoor) {
-      setSelection({ type: "door", id: clickedDoor.id });
-      return;
-    }
+    if (clickedDoor) return { type: "door", id: clickedDoor.id };
 
     const clickedWindow = project.windows.find((win) => {
       const hostWall = project.walls.find((w) => w.id === win.hostWallId);
       return hostWall && distanceToOpening(clickPoint, hostWall, win) < HIT_TOLERANCE_FT;
     });
-    if (clickedWindow) {
-      setSelection({ type: "window", id: clickedWindow.id });
-      return;
-    }
+    if (clickedWindow) return { type: "window", id: clickedWindow.id };
 
     const clickedWall = project.walls.find(
       (wall) => distanceToWall(clickPoint, wall) < HIT_TOLERANCE_FT
     );
-    setSelection(clickedWall ? { type: "wall", id: clickedWall.id } : null);
+    return clickedWall ? { type: "wall", id: clickedWall.id } : null;
+  }
+
+  function clientToCanvasFt(clientX: number, clientY: number): { x: number; y: number } {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT,
+      y: (clientY - rect.top - CANVAS_MARGIN_PX) / PIXELS_PER_FOOT,
+    };
+  }
+
+  function handleCanvasMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
+    const clickPoint = clientToCanvasFt(e.clientX, e.clientY);
+    const hit = hitTestAt(clickPoint);
+    setSelection(hit);
+
+    if (hit?.type === "wall") {
+      const wall = project.walls.find((w) => w.id === hit.id);
+      if (wall) {
+        dragRef.current = {
+          kind: "wall",
+          id: hit.id,
+          startClientX: e.clientX,
+          startClientY: e.clientY,
+          originalStart: wall.start,
+          originalEnd: wall.end,
+        };
+      }
+    } else if (hit?.type === "door" || hit?.type === "window") {
+      const opening =
+        hit.type === "door"
+          ? project.doors.find((d) => d.id === hit.id)
+          : project.windows.find((w) => w.id === hit.id);
+      if (opening) {
+        dragRef.current = { kind: hit.type, id: hit.id, hostWallId: opening.hostWallId };
+      }
+    } else {
+      dragRef.current = null;
+    }
+
+    window.addEventListener("mousemove", handleWindowMouseMove);
+    window.addEventListener("mouseup", handleWindowMouseUp);
+  }
+
+  function handleWindowMouseMove(e: MouseEvent) {
+    const drag = dragRef.current;
+    if (!drag) return;
+
+    if (drag.kind === "wall") {
+      const deltaXft = (e.clientX - drag.startClientX) / PIXELS_PER_FOOT;
+      const deltaYft = (e.clientY - drag.startClientY) / PIXELS_PER_FOOT;
+      const newStart = { x: drag.originalStart.x + deltaXft, y: drag.originalStart.y + deltaYft };
+      const newEnd = { x: drag.originalEnd.x + deltaXft, y: drag.originalEnd.y + deltaYft };
+      setProject((p) => updateWall(p, drag.id, newStart, newEnd));
+      return;
+    }
+
+    // Door/window: slide along the host wall, clamped so the opening
+    // stays within the wall's length.
+    const hostWall = project.walls.find((w) => w.id === drag.hostWallId);
+    if (!hostWall) return;
+
+    const mousePoint = clientToCanvasFt(e.clientX, e.clientY);
+    const rawPositionFt = positionFtAlongWall(mousePoint, hostWall);
+    const wallLengthFt = Math.sqrt(
+      Math.pow(hostWall.end.x - hostWall.start.x, 2) + Math.pow(hostWall.end.y - hostWall.start.y, 2)
+    );
+
+    const opening =
+      drag.kind === "door"
+        ? project.doors.find((d) => d.id === drag.id)
+        : project.windows.find((w) => w.id === drag.id);
+    if (!opening) return;
+
+    const halfWidthFt = opening.widthFt / 2;
+    const clampedPositionFt = Math.max(halfWidthFt, Math.min(wallLengthFt - halfWidthFt, rawPositionFt));
+
+    if (drag.kind === "door") {
+      setProject((p) => updateDoorPosition(p, drag.id, clampedPositionFt));
+    } else {
+      setProject((p) => updateWindowPosition(p, drag.id, clampedPositionFt));
+    }
+  }
+
+  function handleWindowMouseUp() {
+    dragRef.current = null;
+    window.removeEventListener("mousemove", handleWindowMouseMove);
+    window.removeEventListener("mouseup", handleWindowMouseUp);
   }
 
   const selectedWall =
@@ -263,7 +351,7 @@ function App() {
         width={canvasSize.width}
         height={canvasSize.height}
         style={{ background: "#f5f5f5", border: "1px solid #ccc", cursor: "pointer" }}
-        onClick={handleCanvasClick}
+        onMouseDown={handleCanvasMouseDown}
       />
             {selectedWallLengthFt !== null && (
         <p>

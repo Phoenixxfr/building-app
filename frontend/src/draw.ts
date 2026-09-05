@@ -260,6 +260,22 @@ export function distanceToOpening(point: Point, hostWall: Wall, opening: Opening
 }
 
 /**
+ * Returns how far along a wall's centerline (in feet, from its
+ * start) a point projects to. Used for dragging a door/window along
+ * its host wall — the inverse of pointAlongWall.
+ */
+export function positionFtAlongWall(point: Point, wall: Wall): number {
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  const lengthSq = dx * dx + dy * dy;
+
+  if (lengthSq === 0) return 0;
+
+  const t = ((point.x - wall.start.x) * dx + (point.y - wall.start.y) * dy) / lengthSq;
+  return t * Math.sqrt(lengthSq);
+}
+
+/**
  * Shortest distance (in feet) from a point to a wall's centerline
  * segment. Used for click-to-select hit testing.
  */

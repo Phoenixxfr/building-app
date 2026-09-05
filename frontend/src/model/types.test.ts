@@ -6,12 +6,15 @@ import {
   createWall,
   addWall,
   removeWall,
+  updateWall,
   createDoor,
   addDoor,
   removeDoor,
+  updateDoorPosition,
   createWindow,
   addWindow,
   removeWindow,
+  updateWindowPosition,
   createRoom,
   addRoom
 } from "./types";
@@ -140,6 +143,20 @@ describe("removeWall", () => {
   });
 });
 
+describe("updateWall", () => {
+  it("replaces the wall's start/end points", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const updated = addWall(project, wall);
+
+    const moved = updateWall(updated, wall.id, { x: 5, y: 5 }, { x: 25, y: 5 });
+
+    expect(moved.walls[0].start).toEqual({ x: 5, y: 5 });
+    expect(moved.walls[0].end).toEqual({ x: 25, y: 5 });
+  });
+});
+
 describe("addDoor", () => {
   it("returns a new project with the door appended", () => {
     const project = createProject("My House", 60, 90);
@@ -190,6 +207,20 @@ describe("removeDoor", () => {
   });
 });
 
+describe("updateDoorPosition", () => {
+  it("updates the door's positionFt", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const door = createDoor(wall.id, 5, 3, 7, "left");
+    const updated = addDoor(project, door);
+
+    const moved = updateDoorPosition(updated, door.id, 12);
+
+    expect(moved.doors[0].positionFt).toBe(12);
+  });
+});
+
 describe("addWindow", () => {
   it("returns a new project with the window appended", () => {
     const project = createProject("My House", 60, 90);
@@ -213,6 +244,19 @@ describe("removeWindow", () => {
     const result = removeWindow(updated, win.id);
 
     expect(result.windows).toEqual([]);
+  });
+});
+describe("updateWindowPosition", () => {
+  it("updates the window's positionFt", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const win = createWindow(wall.id, 5, 3, 4);
+    const updated = addWindow(project, win);
+
+    const moved = updateWindowPosition(updated, win.id, 15);
+
+    expect(moved.windows[0].positionFt).toBe(15);
   });
 });
 describe("addRoom", () => {
