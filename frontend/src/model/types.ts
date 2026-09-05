@@ -213,6 +213,14 @@ export function addDoor(project: Project, door: Door): Project {
   };
 }
 
+/** Returns a new Project with the given door removed. */
+export function removeDoor(project: Project, doorId: string): Project {
+  return {
+    ...project,
+    doors: project.doors.filter((d) => d.id !== doorId),
+  };
+}
+
 /** A window, hosted by a wall. Same pattern as Door, minus swing direction. */
 export interface Window {
   id: string;
@@ -243,6 +251,14 @@ export function addWindow(project: Project, window: Window): Project {
   return {
     ...project,
     windows: [...project.windows, window],
+  };
+}
+
+/** Returns a new Project with the given window removed. */
+export function removeWindow(project: Project, windowId: string): Project {
+  return {
+    ...project,
+    windows: project.windows.filter((w) => w.id !== windowId),
   };
 }
 /**

@@ -8,8 +8,10 @@ import {
   removeWall,
   createDoor,
   addDoor,
+  removeDoor,
   createWindow,
   addWindow,
+  removeWindow,
   createRoom,
   addRoom
 } from "./types";
@@ -174,6 +176,20 @@ describe("addDoor", () => {
   });
 });
 
+describe("removeDoor", () => {
+  it("removes the door and returns a new project", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const door = createDoor(wall.id, 5, 3, 7, "left");
+    const updated = addDoor(project, door);
+
+    const result = removeDoor(updated, door.id);
+
+    expect(result.doors).toEqual([]);
+  });
+});
+
 describe("addWindow", () => {
   it("returns a new project with the window appended", () => {
     const project = createProject("My House", 60, 90);
@@ -184,6 +200,19 @@ describe("addWindow", () => {
     const updated = addWindow(project, win);
 
     expect(updated.windows).toEqual([win]);
+  });
+});
+describe("removeWindow", () => {
+  it("removes the window and returns a new project", () => {
+    const project = createProject("My House", 60, 90);
+    const level = createLevel("Ground Floor", 0);
+    const wall = createWall(level.id, { x: 0, y: 0 }, { x: 20, y: 0 }, 10, 0.5);
+    const win = createWindow(wall.id, 5, 3, 4);
+    const updated = addWindow(project, win);
+
+    const result = removeWindow(updated, win.id);
+
+    expect(result.windows).toEqual([]);
   });
 });
 describe("addRoom", () => {

@@ -8,8 +8,10 @@ import {
   removeWall,
   createDoor,
   addDoor,
+  removeDoor,
   createWindow,
   addWindow,
+  removeWindow,
 } from "./model/types";
 import {
   drawWall,
@@ -77,6 +79,15 @@ function App() {
   const [heightFt, setHeightFt] = useState("10");
   const [thicknessFt, setThicknessFt] = useState("0.5");
 
+  const [doorPositionFt, setDoorPositionFt] = useState("5");
+  const [doorWidthFt, setDoorWidthFt] = useState("3");
+  const [doorHeightFt, setDoorHeightFt] = useState("7");
+  const [doorSwing, setDoorSwing] = useState<"left" | "right">("left");
+
+  const [winPositionFt, setWinPositionFt] = useState("5");
+  const [winWidthFt, setWinWidthFt] = useState("3");
+  const [winHeightFt, setWinHeightFt] = useState("4");
+
   function handleAddWall(e: React.FormEvent) {
     e.preventDefault();
 
@@ -115,6 +126,50 @@ function App() {
     if (selection?.type !== "wall") return;
     setProject((p) => removeWall(p, selection.id));
     setSelection(null);
+  }
+
+  function handleDeleteDoor() {
+    if (selection?.type !== "door") return;
+    setProject((p) => removeDoor(p, selection.id));
+    setSelection(null);
+  }
+
+  function handleDeleteWindow() {
+    if (selection?.type !== "window") return;
+    setProject((p) => removeWindow(p, selection.id));
+    setSelection(null);
+  }
+
+  function handleAddDoor(e: React.FormEvent) {
+    e.preventDefault();
+    if (selection?.type !== "wall") return;
+
+    const positionFt = parseFloat(doorPositionFt);
+    const widthFt = parseFloat(doorWidthFt);
+    const doorHeight = parseFloat(doorHeightFt);
+    if (![positionFt, widthFt, doorHeight].every(Number.isFinite) || widthFt <= 0 || doorHeight <= 0) {
+      alert("Please enter valid numbers for the door.");
+      return;
+    }
+
+    const newDoor = createDoor(selection.id, positionFt, widthFt, doorHeight, doorSwing);
+    setProject((p) => addDoor(p, newDoor));
+  }
+
+  function handleAddWindow(e: React.FormEvent) {
+    e.preventDefault();
+    if (selection?.type !== "wall") return;
+
+    const positionFt = parseFloat(winPositionFt);
+    const widthFt = parseFloat(winWidthFt);
+    const winHeight = parseFloat(winHeightFt);
+    if (![positionFt, widthFt, winHeight].every(Number.isFinite) || widthFt <= 0 || winHeight <= 0) {
+      alert("Please enter valid numbers for the window.");
+      return;
+    }
+
+    const newWindow = createWindow(selection.id, positionFt, widthFt, winHeight);
+    setProject((p) => addWindow(p, newWindow));
   }
 
   useEffect(() => {
@@ -216,14 +271,54 @@ function App() {
           <button onClick={handleDeleteWall}>Delete Wall</button>
         </p>
       )}
+      {selectedWall && (
+        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+          <form onSubmit={handleAddDoor} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+            <strong>Add door on selected wall:</strong>
+            <label>
+              Position (ft) <input value={doorPositionFt} onChange={(e) => setDoorPositionFt(e.target.value)} size={4} />
+            </label>
+            <label>
+              Width (ft) <input value={doorWidthFt} onChange={(e) => setDoorWidthFt(e.target.value)} size={4} />
+            </label>
+            <label>
+              Height (ft) <input value={doorHeightFt} onChange={(e) => setDoorHeightFt(e.target.value)} size={4} />
+            </label>
+            <label>
+              Swing{" "}
+              <select value={doorSwing} onChange={(e) => setDoorSwing(e.target.value as "left" | "right")}>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </label>
+            <button type="submit">Add Door</button>
+          </form>
+
+          <form onSubmit={handleAddWindow} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+            <strong>Add window on selected wall:</strong>
+            <label>
+              Position (ft) <input value={winPositionFt} onChange={(e) => setWinPositionFt(e.target.value)} size={4} />
+            </label>
+            <label>
+              Width (ft) <input value={winWidthFt} onChange={(e) => setWinWidthFt(e.target.value)} size={4} />
+            </label>
+            <label>
+              Height (ft) <input value={winHeightFt} onChange={(e) => setWinHeightFt(e.target.value)} size={4} />
+            </label>
+            <button type="submit">Add Window</button>
+          </form>
+        </div>
+      )}
       {selectedDoor && (
         <p>
-          Selected door: {selectedDoor.widthFt} ft wide, {selectedDoor.heightFt} ft high
+          Selected door: {selectedDoor.widthFt} ft wide, {selectedDoor.heightFt} ft high{" "}
+          <button onClick={handleDeleteDoor}>Delete Door</button>
         </p>
       )}
       {selectedWindow && (
         <p>
-          Selected window: {selectedWindow.widthFt} ft wide, {selectedWindow.heightFt} ft high
+          Selected window: {selectedWindow.widthFt} ft wide, {selectedWindow.heightFt} ft high{" "}
+          <button onClick={handleDeleteWindow}>Delete Window</button>
         </p>
       )}
 
